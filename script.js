@@ -8,9 +8,10 @@ const tileCount = canvas.width / gridSize;
 
 // game state variables
 let snake = [{ x: 10, y: 10 }]; // array of segments, head at index 0
-let velocity = { x: 0, y: 0 };   // current movement direction
+let velocity = { x: 1, y: 0 };   // current movement direction (start moving right)
 let apple = { x: 15, y: 15 };    // apple location on grid
 let score = 0;                   // player's score
+let gameOver = false;            // flag for game over state
 
 // listen for keyboard input to control the snake
 
@@ -28,11 +29,11 @@ function update() {
     // compute new head position based on current velocity
     const head = { x: snake[0].x + velocity.x, y: snake[0].y + velocity.y };
 
-    // screen wrap: appear on opposite side when leaving bounds
-    if (head.x < 0) head.x = tileCount - 1;
-    if (head.x >= tileCount) head.x = 0;
-    if (head.y < 0) head.y = tileCount - 1;
-    if (head.y >= tileCount) head.y = 0;
+    // check for wall collision (end game instead of wrap)
+    if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+        reset();
+        return;
+    }
 
     // check for collision with any existing segment
     for (let segment of snake) {
@@ -75,10 +76,26 @@ function draw() {
     ctx.fillStyle = 'white';
     ctx.font = '20px Arial';
     ctx.fillText(`Score: ${score}`, 10, 20);
+
+    // draw game over message if applicable
+    if (gameOver) {
+        ctx.fillStyle = 'red';
+        ctx.font = '40px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Game Over', canvas.width / 2, canvas.height / 2);
+        ctx.font = '20px Arial';
+        ctx.fillText('Press any arrow key to restart', canvas.width / 2, canvas.height / 2 + 40);
+        ctx.textAlign = 'left'; // reset alignment
+    }
 }
 
 // handle arrow key input and update snake velocity
 function keyDown(e) {
+    if (gameOver) {
+        gameOver = false; // start new game on any key press after game over
+        velocity = { x: 1, y: 0 }; // start moving right
+        return;
+    }
     switch (e.key) {
         case 'ArrowUp':
             if (velocity.y === 0) velocity = { x: 0, y: -1 };
@@ -113,6 +130,7 @@ function reset() {
     snake = [{ x: 10, y: 10 }];
     velocity = { x: 0, y: 0 };
     score = 0;
+    gameOver = true; // set game over flag
     placeApple();
 }
 
